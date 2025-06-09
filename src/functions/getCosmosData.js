@@ -16,8 +16,8 @@ app.http('getCosmosData', {
         context.log(`HTTP function processed request: ${req.url}`);
 
         const url = new URL(req.url);
-        const id = url.searchParams.get('id');
-        const partitionKey = url.searchParams.get('partitionKey');
+        const id = url.searchParams.get('id').toLowerCase();
+        const partitionKey = url.searchParams.get('partitionKey').toLowerCase();
 
         if (!id || !partitionKey) {
             return {
@@ -31,6 +31,7 @@ app.http('getCosmosData', {
             const container = database.container(containerId);
 
             const { resource } = await container.item(id, partitionKey).read();
+            context.log(`Item read successfully: ${JSON.stringify(resource)}`);
 
             return {
                 status: 200,
