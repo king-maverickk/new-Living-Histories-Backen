@@ -1,6 +1,7 @@
 const client = require('../utils/openaiClient');
 
-module.exports = async function generateScript(event, years, category, location) {
+// add country as a parameter
+module.exports = async function generateScript(event, years, category, location, country) {
   // console.log('Generating script for event:', event);
 
   // 1. Create a thread
@@ -8,6 +9,7 @@ module.exports = async function generateScript(event, years, category, location)
   console.log('Thread created:', thread.id);
 
   // 2. Add message to thread
+  // add country next to location, remove "South Africa"
   await client.beta.threads.messages.create(thread.id, {
     role: 'user',
     content: `You're writing a fully-scripted, 6-9 minute episode of a witty, insightful South African history podcast hosted by two close friends who love a good story as much as they love a good fact.
@@ -28,7 +30,7 @@ module.exports = async function generateScript(event, years, category, location)
 
     Event: ${event}
 
-    Location: ${location}, South Africa
+    Location: ${location}, ${country}
 
     Years or Time Period: ${years}
 

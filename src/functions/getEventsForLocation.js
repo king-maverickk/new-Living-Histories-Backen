@@ -1,7 +1,7 @@
 const client = require('../utils/openaiClient');
 
-module.exports = async function getEventsFromLocation(location) {
-  const prompt = `Generate a list of events or cultural and/or political happenings in ${location}, South Africa in the last 40 years. Display it like EVENT - TIME_PERIOD - CATEGORY. Return only the list. Don't number the events.`;
+module.exports = async function getEventsFromLocation(location, country) {
+  const prompt = `Generate a list of events or cultural and/or political happenings in ${location}, ${country} in the last 80 years. Display it like EVENT - TIME_PERIOD - CATEGORY. Return only the list. Don't number the events.`;
 
   try {
     // Create thread

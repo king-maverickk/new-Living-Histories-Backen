@@ -9,6 +9,8 @@ app.http('getEvents', {
 
     const url = new URL(req.url);
     const location = url.searchParams.get('location');
+    // use country here
+    const country = url.searchParams.get('country')
 
     if (!location) {
       return {
@@ -16,9 +18,15 @@ app.http('getEvents', {
         body: 'Missing location parameter',
       };
     }
+    if (!country) {
+      return {
+        status: 400,
+        body: 'Missing country parameter',
+      };
+    }
 
     try {
-      const events = await getEventsFromLocation(location);
+      const events = await getEventsFromLocation(location, country);
       return {
         status: 200,
         headers: {
