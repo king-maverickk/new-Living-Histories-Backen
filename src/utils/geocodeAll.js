@@ -25,7 +25,7 @@ module.exports = async function geocodeAll(addresses = [], context) {
       results.push(geo);
       context.log(`√ Success: ${address} → ${geo.formatted_address}`);
     } else {
-      context.log.warn(`✗ Failed to geocode: ${address}`);
+      context.log(`✗ Failed to geocode: ${address}`);
     }
 
     await delay(300);

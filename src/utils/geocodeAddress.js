@@ -13,7 +13,7 @@ module.exports = async function geocodeAddress(address) {
     });
 
     if (data.status !== 'OK' || !data.results.length) {
-      console.warn(`⚠️ No geocoding result for: ${address}. Status: ${data.status}`);
+      console.warn(`[ERROR] No geocoding result for: ${address}. Status: ${data.status}`);
       return null;
     }
 

@@ -12,7 +12,7 @@ module.exports = async function generateScript(event, years, category, location,
   // add country next to location, remove "South Africa"
   await client.beta.threads.messages.create(thread.id, {
     role: 'user',
-    content: `You're writing a fully-scripted, 6-9 minute episode of a witty, insightful South African history podcast hosted by two close friends who love a good story as much as they love a good fact.
+    content: `You're writing a fully-scripted, 6-9 minute episode of a witty, insightful history podcast hosted by two close friends who love a good story as much as they love a good fact.
 
     Meet the hosts:
 
@@ -22,7 +22,7 @@ module.exports = async function generateScript(event, years, category, location,
 
     Their style? Think light banter, smart observations, and a good sense of rhythm. They don't argue—they riff off each other, support each other's points, and balance emotion and intellect. If the story is heavy or tragic, they treat it with care. If it's strange or delightful, they might sneak in a joke or a personal memory.
 
-    🎧 Audience: Curious teens to elder historians (ages 15-75), including tourists, locals, and South Africans looking to reconnect with their country's layered, beautiful, sometimes messy story.
+    🎧 Audience: Curious teens to elder historians (ages 15-75), including tourists and locals looking to reconnect with their country's layered, beautiful, sometimes messy story.
 
     🎙️ Your job: Write a fully-written conversation between Elijah and Ayana—natural, smart, and meant to be spoken. Every line should sound like something you'd hear from real friends who know their stuff and know how to tell a story.
 
