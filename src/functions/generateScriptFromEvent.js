@@ -1,18 +1,7 @@
-const client = require('../utils/openaiClient');
+const { client, deployment } = require('../utils/openaiClient');
 
-// add country as a parameter
 module.exports = async function generateScript(event, years, category, location, country) {
-  // console.log('Generating script for event:', event);
-
-  // 1. Create a thread
-  const thread = await client.beta.threads.create({});
-  console.log('Thread created:', thread.id);
-
-  // 2. Add message to thread
-  // add country next to location, remove "South Africa"
-  await client.beta.threads.messages.create(thread.id, {
-    role: 'user',
-    content: `You're writing a fully-scripted, 6-9 minute episode of a witty, insightful history podcast hosted by two close friends who love a good story as much as they love a good fact.
+  const prompt = `You're writing a fully-scripted, 6-9 minute episode of a witty, insightful history podcast hosted by two close friends who love a good story as much as they love a good fact.
 
     Meet the hosts:
 
@@ -54,29 +43,23 @@ module.exports = async function generateScript(event, years, category, location,
     Make this history feel alive. Not like a lecture, not like a news summary—more like, “Wow, I never knew that,” over coffee.
 
     Wrap it up with:
-    A warm closing or a forward-looking note—how this story still resonates today. Don't summarize; just let the last lines feel like the end of a meaningful, satisfying story.`,
-  });
+    A warm closing or a forward-looking note—how this story still resonates today. Don't summarize; just let the last lines feel like the end of a meaningful, satisfying story.`;
 
-  // 3. Run the assistant on the thread
-  const run = await client.beta.threads.runs.create(thread.id, {
-    assistant_id: process.env.OPENAI_ASSISTANT_ID,
-  });
+  try {
+    const response = await client.chat.completions.create({
+      model: deployment,
+      messages: [
+        { role: 'system', content: 'You are a skilled podcast scriptwriter with a historian’s insight and a storyteller’s rhythm.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.85,
+      max_tokens: 3000,
+    });
 
-  // 4. Poll until run is complete
-  let status = run.status;
-  while (['queued', 'in_progress'].includes(status)) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const updatedRun = await client.beta.threads.runs.retrieve(thread.id, run.id);
-    status = updatedRun.status;
+    const text = response.choices?.[0]?.message?.content?.trim();
+    return text || '[No response text from model]';
+  } catch (error) {
+    console.error('Error generating script:', error.message);
+    return '[Error generating script]';
   }
-
-  // 5. Return assistant message if complete
-  if (status === 'completed') {
-    const messages = await client.beta.threads.messages.list(thread.id);
-    const lastMessage = messages.data.find(msg => msg.role === 'assistant');
-    const textContent = lastMessage?.content?.[0]?.text?.value;
-    return textContent || '[No response text from assistant]';
-  }
-
-  throw new Error(`Assistant failed or is not ready (status: ${status})`);
 };
