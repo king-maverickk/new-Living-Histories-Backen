@@ -24,10 +24,7 @@ function parseScript(scriptText) {
     // Skip empty lines but add them as separators between dialogue segments
     if (!line) {
       if (currentSpeaker && currentText) {
-        dialogueSegments.push({
-          speaker: currentSpeaker,
-          text: currentText.trim()
-        });
+        dialogueSegments.push({ speaker: currentSpeaker, text: currentText.trim() });
         currentSpeaker = null;
         currentText = '';
       }
@@ -40,10 +37,7 @@ function parseScript(scriptText) {
     if (speakerMatch) {
       // If we already have content for a previous speaker, save it
       if (currentSpeaker && currentText) {
-        dialogueSegments.push({
-          speaker: currentSpeaker,
-          text: currentText.trim()
-        });
+        dialogueSegments.push({ speaker: currentSpeaker, text: currentText.trim() });
       }
       
       // Start new speaker segment
@@ -52,15 +46,16 @@ function parseScript(scriptText) {
     } else if (currentSpeaker) {
       // Continue text for current speaker
       currentText += ' ' + line;
+    } else {
+      // If there's a line without speaker and no current speaker, treat as anonymous speaker
+      currentSpeaker = 'Narrator';
+      currentText = line;
     }
   }
 
   // Add the last segment if there's any remaining
   if (currentSpeaker && currentText) {
-    dialogueSegments.push({
-      speaker: currentSpeaker,
-      text: currentText.trim()
-    });
+    dialogueSegments.push({ speaker: currentSpeaker, text: currentText.trim() });
   }
 
   return dialogueSegments;
@@ -91,13 +86,13 @@ function generateSSML(dialogueSegments) {
   
   // Add each voice segment
   dialogueSegments.forEach(segment => {
-    let voice = 'en-US-AndrewDragonHD'; // Default voice
+    let voice = 'en-US-EmmaNeural'; // Default voice
     
     // Assign voices based on speaker name
     if (segment.speaker.toLowerCase() === 'elijah') {
-      voice = 'en-US-Andrew:DragonHDLatestNeural'; // Andrew Dragon HD for Elijah
+      voice = 'en-US-AndrewNeural'; // Andrew Dragon HD for Elijah
     } else if (segment.speaker.toLowerCase() === 'ayana') {
-      voice = 'en-US-Emma2:DragonHDLatestNeural'; // Emma2 Dragon HD for Ayana
+      voice = 'en-US-EmmaNeural'; // Emma2 Dragon HD for Ayana
     }
     
     // Add voice tag with text
@@ -110,29 +105,47 @@ function generateSSML(dialogueSegments) {
   return ssml;
 }
 
+async function listVoices() {
+  const url = 'https://eastus2.tts.speech.microsoft.com/cognitiveservices/voices/list';
+  const r = await axios.get(url, { headers: { 'Ocp-Apim-Subscription-Key': process.env.TTS_KEY, 'User-Agent':'voices-list/1.0' }});
+  console.log(r.data.map(v => v.Name).slice(80,180)); // prints names
+}
+
+
 module.exports = async function textToSpeech(scriptText, eventTitle) {
   try {
     // Parse script to identify speakers and their dialogue
     const dialogueSegments = parseScript(scriptText);
     
+    
     // Generate SSML with multiple voices
     const ssml = generateSSML(dialogueSegments);
-    
-    // Call Azure Speech Service
+
+    // Ensure endpoint includes the required path
+    const base = process.env.TTS_ENDPOINT;
+    if (!base) throw new Error('TTS_ENDPOINT is not set in environment');
+    const endpoint = `${base.replace(/\/+$/,'')}/cognitiveservices/v1`;
+    console.log('TTS endpoint:', endpoint);
+
     const response = await axios({
       method: 'post',
-      url: process.env.TTS_ENDPOINT,
+      url: endpoint,
       headers: {
         'Ocp-Apim-Subscription-Key': process.env.TTS_KEY,
         'Content-Type': 'application/ssml+xml',
         'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3',
+        'Accept': 'audio/mpeg',
+        'User-Agent': 'myApp/1.0.0' // some Azure endpoints require this or behave better with it
       },
       data: ssml,
       responseType: 'arraybuffer',
+      timeout: 30000
     });
 
     if (response.status !== 200) {
-      throw new Error(`TTS request failed with status ${response.status}`);
+      // include response body in the thrown error
+      const body = response.data ? Buffer.from(response.data).toString('utf8') : '<no body>';
+      throw new Error(`TTS request failed with status ${response.status}: ${body}`);
     }
     
     console.log('TTS request successful:', response.status);
@@ -146,9 +159,21 @@ module.exports = async function textToSpeech(scriptText, eventTitle) {
     console.log('Audio uploaded successfully:', audioUrl);
     
     console.log('Generating audio for event:', eventTitle);
+    
+    // listVoices().catch(e => console.error(e.response?.data || e.message));
     return audioUrl;
+
   } catch (error) {
-    console.error('Error during TTS request:', error.message);
-    throw new Error('Text-to-speech conversion failed');
+    // better error visibility
+    if (error.response) {
+      // axios error with response
+      console.error('TTS error response status:', error.response.status);
+      try {
+        console.error('TTS error response body:', error.response.data.toString ? error.response.data.toString('utf8') : error.response.data);
+      } catch (e) { console.error('Could not parse response data'); }
+    } else {
+      console.error('TTS error:', error.message);
+    }
+    throw new Error('Text-to-speech conversion failed: ' + (error.message || 'unknown'));
   }
 };
