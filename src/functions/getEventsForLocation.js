@@ -1,48 +1,27 @@
-const client = require('../utils/openaiClient');
+const { client, deployment } = require('../utils/openaiClient');
 
 module.exports = async function getEventsFromLocation(location, country) {
   const prompt = `Generate a list of events or cultural and/or political happenings in ${location}, ${country} in the last 80 years. Display it like EVENT - TIME_PERIOD - CATEGORY. Return only the list. Don't number the events.`;
 
   try {
-    // Create thread
-    const thread = await client.beta.threads.create({});
-
-    // Add user message
-    await client.beta.threads.messages.create(thread.id, {
-      role: 'user',
-      content: prompt,
+    const response = await client.chat.completions.create({
+      model: deployment, // from env via client file
+      messages: [
+        { role: 'system', content: 'You are a factual historian.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
     });
 
-    // Start assistant run
-    const run = await client.beta.threads.runs.create(thread.id, {
-      assistant_id: process.env.OPENAI_ASSISTANT_ID,
-    });
+    const text = response.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('No response content');
 
-    // Poll until complete
-    let status = run.status;
-    while (['queued', 'in_progress'].includes(status)) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const updatedRun = await client.beta.threads.runs.retrieve(thread.id, run.id);
-      status = updatedRun.status;
-    }
+    const eventsArray = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
 
-    if (status === 'completed') {
-      const messages = await client.beta.threads.messages.list(thread.id);
-      const assistantMessage = messages.data.find(msg => msg.role === 'assistant');
-      const responseText = assistantMessage?.content?.[0]?.text?.value;
-
-      if (!responseText) throw new Error('No content returned by assistant');
-
-      // Parse response into array
-      const eventsArray = responseText
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-
-      return eventsArray;
-    }
-
-    throw new Error(`Assistant failed or is not ready (status: ${status})`);
+    return eventsArray;
   } catch (error) {
     console.error('Error fetching events:', error.message);
     return [];

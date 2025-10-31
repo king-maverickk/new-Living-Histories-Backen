@@ -6,4 +6,7 @@ const client = new AzureOpenAI({
   apiVersion: '2024-05-01-preview',
 });
 
-module.exports = client;
+// Optional: also export the deployment name for reuse
+const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+
+module.exports = { client, deployment };
