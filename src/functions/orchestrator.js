@@ -7,7 +7,7 @@ const { QueueClient, QueueServiceClient } = require('@azure/storage-queue');
 const queueServiceClient = QueueServiceClient.fromConnectionString(
   process.env.AzureWebJobsStorage
 );
-const queueClient = queueServiceClient.getQueueClient('myqueuename');
+const queueClient = queueServiceClient.getQueueClient('write-to-cosmos-queue');
 
 app.http('orchestrator', {
   methods: ['POST'],

@@ -11,10 +11,10 @@ const cosmosClient = new CosmosClient({
   endpoint: process.env.COSMOS_DB_ENDPOINT,
   key: process.env.COSMOS_DB_KEY
 });
-const container = cosmosClient.database('Main_DB').container('Data-Container');
+const container = cosmosClient.database('Living-Histories-DB').container('Living-Histories-Container');
 
 app.storageQueue('eventCosmosWriter', {
-  queueName: 'myqueuename',
+  queueName: 'write-to-cosmos-queue',
   connection: 'AzureWebJobsStorage',
   handler: async (queueItem, context) => {
     let msg;
