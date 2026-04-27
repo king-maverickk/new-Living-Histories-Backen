@@ -4,8 +4,8 @@ const { CosmosClient } = require('@azure/cosmos');
 const endpoint = process.env.COSMOS_DB_ENDPOINT;
 const key = process.env.COSMOS_DB_KEY;
 
-const databaseId = 'Main_DB';
-const containerId = 'Data-Container';
+const databaseId = 'Living-Histories-DB';
+const containerId = 'Living-Histories-Container';
 
 const client = new CosmosClient({ endpoint, key });
 
