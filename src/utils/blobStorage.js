@@ -4,15 +4,25 @@ const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, S
 const connectionString = process.env.BLOB_CONNECTION_STRING;
 
 // Extract account name and key from the connection string
-const accountNameMatch = connectionString.match(/AccountName=([^;]+);/);
-const accountKeyMatch = connectionString.match(/AccountKey=([^;]+);/);
+// Handle both standard and Azurite connection strings
+let accountName, accountKey;
 
-if (!accountNameMatch || !accountKeyMatch) {
-  throw new Error("Invalid connection string: cannot extract account name/key");
+if (connectionString.includes('UseDevelopmentStorage=true')) {
+  // Azurite/local storage emulator
+  accountName = 'devstoreaccount1';
+  accountKey = 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==';
+} else {
+  // Standard Azure storage account
+  const accountNameMatch = connectionString.match(/AccountName=([^;]+);/);
+  const accountKeyMatch = connectionString.match(/AccountKey=([^;]+);/);
+
+  if (!accountNameMatch || !accountKeyMatch) {
+    throw new Error("Invalid connection string: cannot extract account name/key");
+  }
+
+  accountName = accountNameMatch[1];
+  accountKey = accountKeyMatch[1];
 }
-
-const accountName = accountNameMatch[1];
-const accountKey = accountKeyMatch[1];
 
 const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
 const containerName = 'podcasts-audio';
